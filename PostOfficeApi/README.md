@@ -20,14 +20,19 @@ PostOfficeApi/
 
 ## Configuration
 
-Set the connection string in `appsettings.json` (or via environment variable
-`ConnectionStrings__PostOfficeDb`):
+The connection string is **not** stored in `appsettings.json` — keep credentials out of
+source control. Set it locally with user secrets (Visual Studio: right-click the project >
+Manage User Secrets) or with an environment variable:
 
-```json
-"ConnectionStrings": {
-  "PostOfficeDb": "Server=YOURSERVER;Database=YourDatabase;User Id=YourUser;Password=YourPassword;TrustServerCertificate=True"
-}
 ```
+dotnet user-secrets set "ConnectionStrings:PostOfficeDb" "Server=YOURSERVER;Database=YourDatabase;User Id=YourUser;Password=YourPassword;TrustServerCertificate=True"
+```
+
+```
+ConnectionStrings__PostOfficeDb=Server=YOURSERVER;Database=YourDatabase;...
+```
+
+The app fails fast at startup with a clear message if the connection string is missing.
 
 For Windows authentication use:
 `Server=YOURSERVER;Database=YourDatabase;Trusted_Connection=True;TrustServerCertificate=True`

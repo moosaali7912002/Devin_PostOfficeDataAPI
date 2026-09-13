@@ -10,8 +10,16 @@ builder.Services
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-builder.Services.AddDbContext<PostOfficeDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("PostOfficeDb")));
+var connectionString = builder.Configuration.GetConnectionString("PostOfficeDb");
+if (string.IsNullOrWhiteSpace(connectionString))
+{
+    throw new InvalidOperationException(
+        "Connection string 'PostOfficeDb' is not configured. Set it with user secrets " +
+        "(dotnet user-secrets set \"ConnectionStrings:PostOfficeDb\" \"...\") or the " +
+        "ConnectionStrings__PostOfficeDb environment variable.");
+}
+
+builder.Services.AddDbContext<PostOfficeDbContext>(options => options.UseSqlServer(connectionString));
 
 builder.Services.AddScoped<IPostOfficeDataService, PostOfficeDataService>();
 
