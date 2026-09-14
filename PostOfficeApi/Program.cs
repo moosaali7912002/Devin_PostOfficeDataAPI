@@ -1,4 +1,8 @@
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.OpenApi;
+using PostOfficeApi.Authentication;
 using PostOfficeApi.Data;
 using PostOfficeApi.Services;
 
@@ -8,7 +12,30 @@ builder.Services
     .AddControllers()
     .AddJsonOptions(options => options.JsonSerializerOptions.PropertyNamingPolicy = null);
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(options =>
+{
+    foreach (var header in new[]
+             {
+                 SignatureAuthenticationDefaults.AppNumberHeader,
+                 SignatureAuthenticationDefaults.UserTokenHeader,
+                 SignatureAuthenticationDefaults.CallDateTimeHeader,
+                 SignatureAuthenticationDefaults.SignatureHeader
+             })
+    {
+        options.AddSecurityDefinition(header, new OpenApiSecurityScheme
+        {
+            Name = header,
+            Type = SecuritySchemeType.ApiKey,
+            In = ParameterLocation.Header,
+            Description = $"{header} request header."
+        });
+
+        options.AddSecurityRequirement(document => new OpenApiSecurityRequirement
+        {
+            { new OpenApiSecuritySchemeReference(header, document), new List<string>() }
+        });
+    }
+});
 
 var connectionString = builder.Configuration.GetConnectionString("PostOfficeDb");
 if (string.IsNullOrWhiteSpace(connectionString))
@@ -23,6 +50,22 @@ builder.Services.AddDbContext<PostOfficeDbContext>(options => options.UseSqlServ
 
 builder.Services.AddScoped<IPostOfficeDataService, PostOfficeDataService>();
 
+builder.Services.AddMemoryCache();
+builder.Services.Configure<ApiClientOptions>(builder.Configuration.GetSection(ApiClientOptions.SectionName));
+
+builder.Services
+    .AddAuthentication(SignatureAuthenticationDefaults.AuthenticationScheme)
+    .AddScheme<SignatureAuthenticationOptions, SignatureAuthenticationHandler>(
+        SignatureAuthenticationDefaults.AuthenticationScheme, _ => { });
+
+builder.Services.AddAuthorization(options =>
+{
+    options.FallbackPolicy = new AuthorizationPolicyBuilder()
+        .AddAuthenticationSchemes(SignatureAuthenticationDefaults.AuthenticationScheme)
+        .RequireAuthenticatedUser()
+        .Build();
+});
+
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
@@ -32,6 +75,10 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+app.UseAuthentication();
+app.UseAuthorization();
+
 app.MapControllers();
 
 app.Run();

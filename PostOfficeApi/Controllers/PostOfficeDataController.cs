@@ -1,10 +1,13 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using PostOfficeApi.Authentication;
 using PostOfficeApi.Models.Dtos;
 using PostOfficeApi.Services;
 
 namespace PostOfficeApi.Controllers;
 
 [ApiController]
+[Authorize(AuthenticationSchemes = SignatureAuthenticationDefaults.AuthenticationScheme)]
 [Route("api/post-office-data")]
 [Produces("application/json")]
 public class PostOfficeDataController : ControllerBase

@@ -40,6 +40,74 @@ For Windows authentication use:
 The database table is expected to already exist (created by your DDL script). The API
 does not create or migrate the schema.
 
+## Authentication
+
+Every request must be signed. Four headers are required:
+
+| Header | Meaning |
+| --- | --- |
+| `X-App-Number` | `app_number` — the caller's public application id |
+| `X-User-Token` | `user_token` — token issued to the calling user/system |
+| `X-Call-DateTime` | ISO 8601 UTC timestamp of the call, e.g. `2026-01-01T10:00:00.000Z` |
+| `X-Signature` | Base64 HMAC-SHA256 of the canonical string below, keyed with `app_secret` |
+
+`app_secret` is never transmitted — it is only used to compute the signature.
+
+Canonical string to sign (fields joined with `\n`):
+
+```
+app_number
+user_token
+call_datetime          (exactly the X-Call-DateTime header value)
+HTTP_METHOD            (upper case, e.g. POST)
+/api/post-office-data  (path + query string)
+base64(sha256(body))   (empty string body for GET)
+```
+
+```
+signature = base64(hmacsha256(app_secret, stringToSign))
+```
+
+Rejections return `401`:
+- missing/invalid header, unknown `app_number`, or `user_token` not registered for that app;
+- `X-Call-DateTime` more than `ApiClients:AllowedClockSkew` (default 5 minutes) away from server UTC time;
+- signature mismatch (also catches a tampered body, since the body hash is signed);
+- the same signature replayed a second time.
+
+Register callers in configuration (put the secrets in user secrets / environment variables,
+not in `appsettings.json`):
+
+```json
+"ApiClients": {
+  "AllowedClockSkew": "00:05:00",
+  "Clients": [
+    {
+      "AppNumber": "PEC-POST-001",
+      "AppSecret": "a-long-random-secret",
+      "DisplayName": "Maldives Post",
+      "UserTokens": [ "token-issued-to-their-system" ]
+    }
+  ]
+}
+```
+
+Leave `UserTokens` empty to accept any token value for that app.
+
+Client-side signing (C#):
+
+```csharp
+var body = JsonSerializer.Serialize(payload);
+var callDateTime = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.fffZ");
+var bodyHash = Convert.ToBase64String(SHA256.HashData(Encoding.UTF8.GetBytes(body)));
+var stringToSign = string.Join('\n', appNumber, userToken, callDateTime, "POST", "/api/post-office-data", bodyHash);
+
+using var hmac = new HMACSHA256(Encoding.UTF8.GetBytes(appSecret));
+var signature = Convert.ToBase64String(hmac.ComputeHash(Encoding.UTF8.GetBytes(stringToSign)));
+```
+
+`postman/PostOfficeApi.postman_collection.json` contains a pre-request script that does this
+automatically — set the `appNumber`, `appSecret` and `userToken` collection variables.
+
 ## Endpoints
 
 | Method | Route | Description |
