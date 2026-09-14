@@ -1,0 +1,81 @@
+{
+  "info": {
+    "name": "PostOfficeApi",
+    "description": "pec.PostOfficeData API (.NET 8). Set baseUrl, appNumber, appSecret and userToken collection variables; the pre-request script signs every call.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "https://localhost:7261" },
+    { "key": "appNumber", "value": "PEC-POST-001" },
+    { "key": "appSecret", "value": "a-long-random-secret" },
+    { "key": "userToken", "value": "token-issued-to-their-system" },
+    { "key": "trackingNo", "value": "EE123456789MV" }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "const appNumber = pm.variables.get('appNumber');",
+          "const appSecret = pm.variables.get('appSecret');",
+          "const userToken = pm.variables.get('userToken');",
+          "",
+          "const rawBody = (pm.request.body && pm.request.body.raw) ? pm.variables.replaceIn(pm.request.body.raw) : '';",
+          "const query = pm.request.url.getQueryString();",
+          "const pathAndQuery = '/' + pm.request.url.getPath().replace(/^\\//, '') + (query ? '?' + query : '');",
+          "const callDateTime = new Date().toISOString();",
+          "",
+          "const bodyHash = CryptoJS.SHA256(rawBody).toString(CryptoJS.enc.Base64);",
+          "const stringToSign = [appNumber, userToken, callDateTime, pm.request.method.toUpperCase(), pathAndQuery, bodyHash].join('\\n');",
+          "const signature = CryptoJS.HmacSHA256(stringToSign, appSecret).toString(CryptoJS.enc.Base64);",
+          "",
+          "pm.request.headers.upsert({ key: 'X-App-Number', value: appNumber });",
+          "pm.request.headers.upsert({ key: 'X-User-Token', value: userToken });",
+          "pm.request.headers.upsert({ key: 'X-Call-DateTime', value: callDateTime });",
+          "pm.request.headers.upsert({ key: 'X-Signature', value: signature });"
+        ]
+      }
+    }
+  ],
+  "item": [
+    {
+      "name": "Create record",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": { "raw": "{{baseUrl}}/api/post-office-data", "host": ["{{baseUrl}}"], "path": ["api", "post-office-data"] },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"PO_CustomerName\": \"John Doe\",\n  \"PO_TrackingNo\": \"EE123456789MV\",\n  \"PO_MobileNo\": \"9601234567\",\n  \"PO_EmailAddress\": \"john.doe@example.com\",\n  \"PO_Weight\": 1.250,\n  \"PO_CurrentDestination\": \"Male\",\n  \"PO_CurrentLocation\": \"Hulhumale Sorting Center\",\n  \"PO_CreatedAt\": \"2026-01-01T10:00:00\",\n  \"PO_MplUpdatedAt\": \"2026-01-02T08:30:00\",\n  \"PO_OriginCountryCode\": \"SGP\",\n  \"PO_DestinationCountryCode\": \"MDV\",\n  \"PO_ShippingAddress\": \"H. Example, Male, Maldives\",\n  \"PO_ItemsDescription\": \"Mobile phone accessories\",\n  \"PO_Pieces\": 2,\n  \"PO_Value\": 150.00,\n  \"PO_PackageNumber\": \"PKG-0001\",\n  \"PO_ServiceType\": \"EMS\",\n  \"PO_PackageLastStatus\": \"In Transit\"\n}"
+        }
+      }
+    },
+    {
+      "name": "Create records (bulk)",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": { "raw": "{{baseUrl}}/api/post-office-data/bulk", "host": ["{{baseUrl}}"], "path": ["api", "post-office-data", "bulk"] },
+        "body": {
+          "mode": "raw",
+          "raw": "[\n  { \"PO_TrackingNo\": \"EE000000001MV\", \"PO_MobileNo\": \"9607777777\", \"PO_ServiceType\": \"EMS\" },\n  { \"PO_TrackingNo\": \"EE000000002MV\", \"PO_MobileNo\": \"9608888888\", \"PO_ServiceType\": \"Parcel\" }\n]"
+        }
+      }
+    },
+    {
+      "name": "Get by id",
+      "request": {
+        "method": "GET",
+        "url": { "raw": "{{baseUrl}}/api/post-office-data/1", "host": ["{{baseUrl}}"], "path": ["api", "post-office-data", "1"] }
+      }
+    },
+    {
+      "name": "Get by tracking no",
+      "request": {
+        "method": "GET",
+        "url": { "raw": "{{baseUrl}}/api/post-office-data/by-tracking-no/{{trackingNo}}", "host": ["{{baseUrl}}"], "path": ["api", "post-office-data", "by-tracking-no", "{{trackingNo}}"] }
+      }
+    }
+  ]
+}
