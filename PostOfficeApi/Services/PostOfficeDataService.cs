@@ -16,7 +16,7 @@ public class PostOfficeDataService : IPostOfficeDataService
         _logger = logger;
     }
 
-    public async Task<PostOfficeDataResponse> CreateAsync(PostOfficeDataRequest request, CancellationToken cancellationToken = default)
+    public async Task<PostOfficeDataCreateResponse> CreateAsync(PostOfficeDataRequest request, CancellationToken cancellationToken = default)
     {
         var entity = MapToEntity(request);
 
@@ -25,8 +25,28 @@ public class PostOfficeDataService : IPostOfficeDataService
 
         _logger.LogInformation("Stored post office record {Id} for tracking number {TrackingNo}", entity.Id, entity.PO_TrackingNo);
 
-        return MapToResponse(entity);
+        //MapToResponse(entity);
+        return new PostOfficeDataCreateResponse
+        {
+            Success = true,
+            Message = "Data successfully recorded.",
+            TrackingNo = entity.PO_TrackingNo,
+            RecordId = entity.Id,
+            RecordedAt = DateTime.UtcNow
+        };
     }
+
+    //public async Task<PostOfficeDataResponse> CreateAsync(PostOfficeDataRequest request, CancellationToken cancellationToken = default)
+    //{
+    //    var entity = MapToEntity(request);
+
+    //    _dbContext.PostOfficeData.Add(entity);
+    //    await _dbContext.SaveChangesAsync(cancellationToken);
+
+    //    _logger.LogInformation("Stored post office record {Id} for tracking number {TrackingNo}", entity.Id, entity.PO_TrackingNo);
+
+    //    return MapToResponse(entity);
+    //}
 
     public async Task<IReadOnlyList<PostOfficeDataResponse>> CreateManyAsync(IEnumerable<PostOfficeDataRequest> requests, CancellationToken cancellationToken = default)
     {
@@ -104,4 +124,5 @@ public class PostOfficeDataService : IPostOfficeDataService
         PO_ServiceType = entity.PO_ServiceType,
         PO_PackageLastStatus = entity.PO_PackageLastStatus
     };
+
 }
