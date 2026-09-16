@@ -18,35 +18,60 @@ public class PostOfficeDataService : IPostOfficeDataService
 
     public async Task<PostOfficeDataCreateResponse> CreateAsync(PostOfficeDataRequest request, CancellationToken cancellationToken = default)
     {
-        var entity = MapToEntity(request);
-
-        _dbContext.PostOfficeData.Add(entity);
-        await _dbContext.SaveChangesAsync(cancellationToken);
-
-        _logger.LogInformation("Stored post office record {Id} for tracking number {TrackingNo}", entity.Id, entity.PO_TrackingNo);
-
-        //MapToResponse(entity);
-        return new PostOfficeDataCreateResponse
+        var receivedAt = DateTime.UtcNow.AddHours(5);
+        try
         {
-            Success = true,
-            Message = "Data successfully recorded.",
-            TrackingNo = entity.PO_TrackingNo,
-            RecordId = entity.Id,
-            RecordedAt = DateTime.UtcNow
-        };
+            var entity = MapToEntity(request);
+            // Set the date/time when the payload was received by the API
+            entity.IncomigPayloadReceivedDateTime = receivedAt;
+
+            _dbContext.PostOfficeData.Add(entity);
+            var affectedRows = await _dbContext.SaveChangesAsync(cancellationToken);
+
+            if (affectedRows < 1)
+            {
+                _logger.LogWarning("Post office data was not saved for tracking number {TrackingNo}", entity.PO_TrackingNo);
+
+                return new PostOfficeDataCreateResponse
+                {
+                    Success = false,
+                    Message = "Data was not recorded in the database. No records were affected.",
+                    TrackingNo = entity.PO_TrackingNo,
+                    RecordId = 0,
+                    RecordedAt = receivedAt
+                };
+            }
+            else
+            {
+
+                _logger.LogInformation("Stored post office record {Id} for tracking number {TrackingNo}", entity.Id, entity.PO_TrackingNo);
+
+                //MapToResponse(entity);
+                return new PostOfficeDataCreateResponse
+                {
+                    Success = true,
+                    Message = "Data successfully recorded.",
+                    TrackingNo = entity.PO_TrackingNo,
+                    RecordId = entity.Id,
+                    RecordedAt = receivedAt
+                };
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex,"Failed to store post office data for tracking number {TrackingNo}",request.tracking_no);
+
+            return new PostOfficeDataCreateResponse
+            {
+                Success = false,
+                Message = $"Data could not be recorded. Reason: {ex.Message}",
+                TrackingNo = request.tracking_no,
+                RecordId = 0,
+                RecordedAt = receivedAt
+            };
+        }
     }
 
-    //public async Task<PostOfficeDataResponse> CreateAsync(PostOfficeDataRequest request, CancellationToken cancellationToken = default)
-    //{
-    //    var entity = MapToEntity(request);
-
-    //    _dbContext.PostOfficeData.Add(entity);
-    //    await _dbContext.SaveChangesAsync(cancellationToken);
-
-    //    _logger.LogInformation("Stored post office record {Id} for tracking number {TrackingNo}", entity.Id, entity.PO_TrackingNo);
-
-    //    return MapToResponse(entity);
-    //}
 
     public async Task<IReadOnlyList<PostOfficeDataResponse>> CreateManyAsync(IEnumerable<PostOfficeDataRequest> requests, CancellationToken cancellationToken = default)
     {
@@ -100,25 +125,6 @@ public class PostOfficeDataService : IPostOfficeDataService
         PO_PackageNumber = request.package_number,
         PO_ServiceType = request.ServiceType,
         PO_PackageLastStatus = request.PackageLastStatus
-
-        //PO_CustomerName = request.PO_CustomerName,
-        //PO_TrackingNo = request.PO_TrackingNo,
-        //PO_MobileNo = request.PO_MobileNo,
-        //PO_EmailAddress = request.PO_EmailAddress,
-        //PO_Weight = request.PO_Weight,
-        //PO_CurrentDestination = request.PO_CurrentDestination,
-        //PO_CurrentLocation = request.PO_CurrentLocation,
-        //PO_CreatedAt = request.PO_CreatedAt ?? DateTime.UtcNow,
-        //PO_MplUpdatedAt = request.PO_MplUpdatedAt,
-        //PO_OriginCountryCode = request.PO_OriginCountryCode,
-        //PO_DestinationCountryCode = request.PO_DestinationCountryCode,
-        //PO_ShippingAddress = request.PO_ShippingAddress,
-        //PO_ItemsDescription = request.PO_ItemsDescription,
-        //PO_Pieces = request.PO_Pieces,
-        //PO_Value = request.PO_Value,
-        //PO_PackageNumber = request.PO_PackageNumber,
-        //PO_ServiceType = request.PO_ServiceType,
-        //PO_PackageLastStatus = request.PO_PackageLastStatus
     };
 
     private static PostOfficeDataResponse MapToResponse(PostOfficeData entity) => new()

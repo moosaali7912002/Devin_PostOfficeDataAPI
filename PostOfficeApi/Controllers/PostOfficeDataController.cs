@@ -7,7 +7,7 @@ using PostOfficeApi.Services;
 namespace PostOfficeApi.Controllers;
 
 [ApiController]
-[Authorize(AuthenticationSchemes = SignatureAuthenticationDefaults.AuthenticationScheme)]
+//[Authorize(AuthenticationSchemes = SignatureAuthenticationDefaults.AuthenticationScheme)]
 [Route("api/post-office-data")]
 [Produces("application/json")]
 public class PostOfficeDataController : ControllerBase
@@ -27,15 +27,6 @@ public class PostOfficeDataController : ControllerBase
         var created = await _service.CreateAsync(request, cancellationToken);
         return CreatedAtAction(nameof(GetById), new { id = created.RecordId }, created);
     }
-
-    //[HttpPost]
-    //[ProducesResponseType(typeof(PostOfficeDataResponse), StatusCodes.Status201Created)]
-    //[ProducesResponseType(StatusCodes.Status400BadRequest)]
-    //public async Task<ActionResult<PostOfficeDataResponse>> Create([FromBody] PostOfficeDataRequest request, CancellationToken cancellationToken)
-    //{
-    //    var created = await _service.CreateAsync(request, cancellationToken);
-    //    return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
-    //}
 
     [HttpPost("bulk")]
     [ProducesResponseType(typeof(IReadOnlyList<PostOfficeDataResponse>), StatusCodes.Status201Created)]

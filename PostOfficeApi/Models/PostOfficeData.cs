@@ -73,6 +73,9 @@ public class PostOfficeData
     [Column("PO_PackageLastStatus", TypeName = "varchar(100)")]
     public string? PO_PackageLastStatus { get; set; }
 
+    [Column("IncomigPayloadReceivedDateTime")]
+    public DateTime? IncomigPayloadReceivedDateTime { get; set; }
+
     [Column("McsUpdateAt")]
     public DateTime? McsUpdateAt { get; set; }
 

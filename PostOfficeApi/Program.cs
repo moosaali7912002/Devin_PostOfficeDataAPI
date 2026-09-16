@@ -1,15 +1,44 @@
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi;
 using PostOfficeApi.Authentication;
 using PostOfficeApi.Data;
+using PostOfficeApi.Models.Dtos;
 using PostOfficeApi.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services
     .AddControllers()
+    .ConfigureApiBehaviorOptions(options =>
+    {
+        options.InvalidModelStateResponseFactory = context =>
+        {
+            var errors = context.ModelState.Where(x => x.Value?.Errors.Count > 0).SelectMany(x => x.Value!.Errors.Select(e => new
+                {
+                    Field = x.Key,
+                    Error = e.ErrorMessage
+                }))
+                .ToList();
+
+            var firstError = errors.FirstOrDefault();
+
+            var message = firstError != null? $"Invalid value for field '{firstError.Field}'." : "The submitted payload is invalid.";
+
+            var response = new PostOfficeDataCreateResponse
+            {
+                Success = false,
+                Message = message,
+                TrackingNo = string.Empty,
+                RecordId = 0,
+                RecordedAt = DateTime.UtcNow.AddHours(5)
+            };
+
+            return new BadRequestObjectResult(response);
+        };
+    })
     .AddJsonOptions(options => options.JsonSerializerOptions.PropertyNamingPolicy = null);
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>

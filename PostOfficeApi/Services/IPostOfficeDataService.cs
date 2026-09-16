@@ -4,7 +4,6 @@ namespace PostOfficeApi.Services;
 
 public interface IPostOfficeDataService
 {
-    //Task<PostOfficeDataResponse> CreateAsync(PostOfficeDataRequest request, CancellationToken cancellationToken = default);
     Task<PostOfficeDataCreateResponse> CreateAsync(PostOfficeDataRequest request, CancellationToken cancellationToken = default);
 
     Task<IReadOnlyList<PostOfficeDataResponse>> CreateManyAsync(IEnumerable<PostOfficeDataRequest> requests, CancellationToken cancellationToken = default);
