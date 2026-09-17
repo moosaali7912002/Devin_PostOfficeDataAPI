@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using PostOfficeApi.Authentication;
 using PostOfficeApi.Models.Dtos;
 using PostOfficeApi.Services;
@@ -13,19 +14,53 @@ namespace PostOfficeApi.Controllers;
 public class PostOfficeDataController : ControllerBase
 {
     private readonly IPostOfficeDataService _service;
+    private readonly ILogger<PostOfficeDataController> _logger;
 
-    public PostOfficeDataController(IPostOfficeDataService service)
+    public PostOfficeDataController(IPostOfficeDataService service, ILogger<PostOfficeDataController> logger)
     {
         _service = service;
+        _logger = logger;
     }
 
     [HttpPost]
     [ProducesResponseType(typeof(PostOfficeDataCreateResponse), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<PostOfficeDataCreateResponse>> Create([FromBody] PostOfficeDataRequest request, CancellationToken cancellationToken)
     {
-        var created = await _service.CreateAsync(request, cancellationToken);
-        return CreatedAtAction(nameof(GetById), new { id = created.RecordId }, created);
+        try
+        {
+            var created = await _service.CreateAsync(request, cancellationToken);
+            return CreatedAtAction(nameof(GetById), new { id = created.RecordId }, created);
+        }
+        catch (OperationCanceledException)
+        {
+            // Let the client know the request timed out / was cancelled
+            _logger.LogInformation("Create request cancelled by client.");
+            return Problem(title: "Request cancelled", statusCode: StatusCodes.Status499ClientClosedRequest);
+        }
+        catch (DbUpdateException dbEx)
+        {
+            _logger.LogError(dbEx, "Database failure while creating post office data for tracking number {TrackingNo}", request?.tracking_no);
+            var pd = new ProblemDetails
+            {
+                Title = "Database error",
+                Detail = "A database error occurred while recording the data. Please retry.",
+                Status = StatusCodes.Status500InternalServerError
+            };
+            return StatusCode(StatusCodes.Status500InternalServerError, pd);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Unhandled error while creating post office data for tracking number {TrackingNo}", request?.tracking_no);
+            var pd = new ProblemDetails
+            {
+                Title = "Internal server error",
+                Detail = "An unexpected error occurred while processing the request.",
+                Status = StatusCodes.Status500InternalServerError
+            };
+            return StatusCode(StatusCodes.Status500InternalServerError, pd);
+        }
     }
 
     [HttpPost("bulk")]

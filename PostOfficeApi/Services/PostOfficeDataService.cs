@@ -18,58 +18,42 @@ public class PostOfficeDataService : IPostOfficeDataService
 
     public async Task<PostOfficeDataCreateResponse> CreateAsync(PostOfficeDataRequest request, CancellationToken cancellationToken = default)
     {
+        if (request is null) throw new ArgumentNullException(nameof(request));
+        cancellationToken.ThrowIfCancellationRequested();
+
         var receivedAt = DateTime.UtcNow.AddHours(5);
-        try
+
+        var entity = MapToEntity(request);
+        // Set the date/time when the payload was received by the API
+        entity.IncomigPayloadReceivedDateTime = receivedAt;
+
+        _dbContext.PostOfficeData.Add(entity);
+        var affectedRows = await _dbContext.SaveChangesAsync(cancellationToken);
+
+        if (affectedRows < 1)
         {
-            var entity = MapToEntity(request);
-            // Set the date/time when the payload was received by the API
-            entity.IncomigPayloadReceivedDateTime = receivedAt;
-
-            _dbContext.PostOfficeData.Add(entity);
-            var affectedRows = await _dbContext.SaveChangesAsync(cancellationToken);
-
-            if (affectedRows < 1)
-            {
-                _logger.LogWarning("Post office data was not saved for tracking number {TrackingNo}", entity.PO_TrackingNo);
-
-                return new PostOfficeDataCreateResponse
-                {
-                    Success = false,
-                    Message = "Data was not recorded in the database. No records were affected.",
-                    TrackingNo = entity.PO_TrackingNo,
-                    RecordId = 0,
-                    RecordedAt = receivedAt
-                };
-            }
-            else
-            {
-
-                _logger.LogInformation("Stored post office record {Id} for tracking number {TrackingNo}", entity.Id, entity.PO_TrackingNo);
-
-                //MapToResponse(entity);
-                return new PostOfficeDataCreateResponse
-                {
-                    Success = true,
-                    Message = "Data successfully recorded.",
-                    TrackingNo = entity.PO_TrackingNo,
-                    RecordId = entity.Id,
-                    RecordedAt = receivedAt
-                };
-            }
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex,"Failed to store post office data for tracking number {TrackingNo}",request.tracking_no);
+            _logger.LogWarning("Post office data was not saved for tracking number {TrackingNo}", entity.PO_TrackingNo);
 
             return new PostOfficeDataCreateResponse
             {
                 Success = false,
-                Message = $"Data could not be recorded. Reason: {ex.Message}",
-                TrackingNo = request.tracking_no,
+                Message = "Data was not recorded in the database. No records were affected.",
+                TrackingNo = entity.PO_TrackingNo,
                 RecordId = 0,
                 RecordedAt = receivedAt
             };
         }
+
+        _logger.LogInformation("Stored post office record {Id} for tracking number {TrackingNo}", entity.Id, entity.PO_TrackingNo);
+
+        return new PostOfficeDataCreateResponse
+        {
+            Success = true,
+            Message = "Data successfully recorded.",
+            TrackingNo = entity.PO_TrackingNo,
+            RecordId = entity.Id,
+            RecordedAt = receivedAt
+        };
     }
 
 
