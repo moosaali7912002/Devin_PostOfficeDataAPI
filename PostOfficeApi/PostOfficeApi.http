@@ -1,0 +1,33 @@
+@PostOfficeApi_HostAddress = http://localhost:5000
+
+POST {{PostOfficeApi_HostAddress}}/api/post-office-data
+Content-Type: application/json
+
+{
+  "PO_CustomerName": "John Doe",
+  "PO_TrackingNo": "EE123456789MV",
+  "PO_MobileNo": "9601234567",
+  "PO_EmailAddress": "john.doe@example.com",
+  "PO_Weight": 1.250,
+  "PO_CurrentDestination": "Male",
+  "PO_CurrentLocation": "Hulhumale Sorting Center",
+  "PO_CreatedAt": "2026-01-01T10:00:00",
+  "PO_MplUpdatedAt": "2026-01-02T08:30:00",
+  "PO_OriginCountryCode": "SGP",
+  "PO_DestinationCountryCode": "MDV",
+  "PO_ShippingAddress": "H. Example, Male, Maldives",
+  "PO_ItemsDescription": "Mobile phone accessories",
+  "PO_Pieces": 2,
+  "PO_Value": 150.00,
+  "PO_PackageNumber": "PKG-0001",
+  "PO_ServiceType": "EMS",
+  "PO_PackageLastStatus": "In Transit"
+}
+
+###
+
+GET {{PostOfficeApi_HostAddress}}/api/post-office-data/1
+
+###
+
+GET {{PostOfficeApi_HostAddress}}/api/post-office-data/by-tracking-no/EE123456789MV
