@@ -26,6 +26,12 @@ public class PostOfficeDbContext : DbContext
             entity.HasIndex(e => e.ReceiverWorkPermitNo).HasDatabaseName("IX_PostOfficeData_ReceiverWorkPermitNo").HasFilter("[ReceiverWorkPermitNo] IS NOT NULL");
             entity.HasIndex(e => new { e.CurrentStatus, e.IsHit }).HasDatabaseName("IX_PostOfficeData_CurrentStatus_IsHit");
             entity.HasIndex(e => e.PO_MplUpdatedAt).HasDatabaseName("IX_PostOfficeData_PO_MplUpdatedAt");
+
+            // Relationship
+            entity.HasMany(e => e.postOfficeDataEvents)
+                  .WithOne(e => e.PostOfficeData)
+                  .HasForeignKey(e => e.PostOfficeDataId)
+                  .OnDelete(DeleteBehavior.Cascade);
         });
     }
 }

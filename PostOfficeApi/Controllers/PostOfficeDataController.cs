@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using PostOfficeApi.Authentication;
 using PostOfficeApi.Models.Dtos;
 using PostOfficeApi.Services;
+using System.Text.Json;
 
 namespace PostOfficeApi.Controllers;
 
@@ -26,10 +27,23 @@ public class PostOfficeDataController : ControllerBase
     [ProducesResponseType(typeof(PostOfficeDataCreateResponse), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-    public async Task<ActionResult<PostOfficeDataCreateResponse>> Create([FromBody] PostOfficeDataRequest request, CancellationToken cancellationToken)
+    public async Task<ActionResult<PostOfficeDataCreateResponse>> Create([FromBody] PostOfficeDataPayload payload, CancellationToken cancellationToken)
     {
         try
         {
+            if (payload?.MailItem is null)
+            {
+                return BadRequest("mail_item is required.");
+            }
+
+            var request = payload.MailItem;
+
+            if (string.IsNullOrWhiteSpace(request.tracking_no))
+            {
+                return BadRequest("tracking_no is required.");
+            }
+
+
             var created = await _service.CreateAsync(request, cancellationToken);
             return CreatedAtAction(nameof(GetById), new { id = created.RecordId }, created);
         }
@@ -41,25 +55,19 @@ public class PostOfficeDataController : ControllerBase
         }
         catch (DbUpdateException dbEx)
         {
-            _logger.LogError(dbEx, "Database failure while creating post office data for tracking number {TrackingNo}", request?.tracking_no);
-            var pd = new ProblemDetails
-            {
-                Title = "Database error",
-                Detail = "A database error occurred while recording the data. Please retry.",
-                Status = StatusCodes.Status500InternalServerError
-            };
-            return StatusCode(StatusCodes.Status500InternalServerError, pd);
+            _logger.LogError(dbEx, "Database failure while creating post office data.");
+            return Problem(
+                title: "Database error", 
+                detail: "A database error occurred while recording the data. Please retry.",
+                statusCode: StatusCodes.Status500InternalServerError);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Unhandled error while creating post office data for tracking number {TrackingNo}", request?.tracking_no);
-            var pd = new ProblemDetails
-            {
-                Title = "Internal server error",
-                Detail = "An unexpected error occurred while processing the request.",
-                Status = StatusCodes.Status500InternalServerError
-            };
-            return StatusCode(StatusCodes.Status500InternalServerError, pd);
+            _logger.LogError(ex, "Unhandled error while creating post office data.");
+            return Problem(
+                title: "Internal server error",
+                detail: "An unexpected error occurred while processing the request.",
+                statusCode: StatusCodes.Status500InternalServerError);
         }
     }
 

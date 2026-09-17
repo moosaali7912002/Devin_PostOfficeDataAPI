@@ -34,6 +34,12 @@ public class PostOfficeData
     [Column("PO_Weight", TypeName = "decimal(18,3)")]
     public decimal? PO_Weight { get; set; }
 
+    [Column("PO_MailClass", TypeName = "varchar(100)")]
+    public string? PO_MailClass { get; set; }
+
+    [Column("PO_MailSubClass", TypeName = "varchar(100)")]
+    public string? PO_MailSubClass { get; set; }
+
     [Column("PO_CurrentDestination", TypeName = "varchar(255)")]
     public string? PO_CurrentDestination { get; set; }
 
@@ -66,12 +72,12 @@ public class PostOfficeData
 
     [Column("PO_PackageNumber", TypeName = "varchar(100)")]
     public string? PO_PackageNumber { get; set; }
-
-    [Column("PO_ServiceType", TypeName = "varchar(100)")]
-    public string? PO_ServiceType { get; set; }
-
+    
     [Column("PO_PackageLastStatus", TypeName = "varchar(100)")]
     public string? PO_PackageLastStatus { get; set; }
+
+    [Column("PO_ScanTimeZone", TypeName = "varchar(50)")]
+    public string? PO_ScanTimeZone { get; set; }
 
     [Column("IncomigPayloadReceivedDateTime")]
     public DateTime? IncomigPayloadReceivedDateTime { get; set; }
@@ -120,4 +126,7 @@ public class PostOfficeData
 
     [Column("IsHit")]
     public bool? IsHit { get; set; }
+
+    // Navigation property for related events
+    public List<PostOfficeDataEvent>? postOfficeDataEvents { get; set; }
 }

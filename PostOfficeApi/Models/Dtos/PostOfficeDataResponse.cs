@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace PostOfficeApi.Models.Dtos;
 
 public class PostOfficeDataResponse
@@ -8,10 +10,12 @@ public class PostOfficeDataResponse
     public string PO_MobileNo { get; set; } = null!;
     public string? PO_EmailAddress { get; set; }
     public decimal? PO_Weight { get; set; }
+    public string? PO_MailClass { get; set; }
+    public string? PO_MailSubClass { get; set; }
     public string? PO_CurrentDestination { get; set; }
     public string? PO_CurrentLocation { get; set; }
-    public DateTime? PO_CreatedAt { get; set; }
-    public DateTime? PO_MplUpdatedAt { get; set; }
+    public string? PO_CreatedAt { get; set; }
+    public string? PO_MplUpdatedAt { get; set; }
     public string? PO_OriginCountryCode { get; set; }
     public string? PO_DestinationCountryCode { get; set; }
     public string? PO_ShippingAddress { get; set; }
@@ -19,6 +23,6 @@ public class PostOfficeDataResponse
     public int? PO_Pieces { get; set; }
     public decimal? PO_Value { get; set; }
     public string? PO_PackageNumber { get; set; }
-    public string? PO_ServiceType { get; set; }
+    public string? PO_ScanTimeZone { get; set; }
     public string? PO_PackageLastStatus { get; set; }
 }

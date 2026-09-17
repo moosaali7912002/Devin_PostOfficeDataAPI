@@ -4,6 +4,45 @@ Records post office data into the existing `pec.PostOfficeData` table in MS SQL 
 Only the `PO_*` fields are accepted from clients; all other columns (NID, receiver info,
 status columns, etc.) are left to the existing back-office processes.
 
+
+Incoming Payload sample:
+```
+{
+    "status": "success",
+    "mail_item": {
+        "customer_name": "Test Moosa 2",
+        "tracking_no": "XX123456789XX",
+        "mobile_no": "7778888",
+        "email_address": "",
+        "weight": "",
+        "mail_class": "",
+        "mail_sub_class": "",
+        "current_destination": "",
+        "current_location": "",
+        "created_at": "02-09-2026 14:25:52",
+        "updated_at": "08-09-2026 10:43:14",
+        "origin_country": "",
+        "destination_country": "",
+        "shipping_address": "",
+        "items": "",
+        "pieces": 1,
+        "value": 0,
+        "package_number": "",
+        "scan_time_zone": "UTC+05:00",
+        "events": [
+            {
+                "details": "Item Delivered",
+                "created_at": "08-09-2026 10:43:14"
+            },
+            {
+                "details": "Item Information Created",
+                "created_at": "02-09-2026 14:25:52"
+            }
+        ]
+    }
+}
+```
+
 ## Structure
 
 ```
